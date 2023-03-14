@@ -18,7 +18,7 @@ app.use((req, res, next) => {
     res.cc = (err, status = 1) =>{
         res.send({
             status,
-            messge: err instanceof Error ? err.message : err
+            message: err instanceof Error ? err.message : err
         })
     }
     next()

@@ -29,10 +29,17 @@ exports.register = (req, res) => {
             if(results.affectedRows !== 1) {
                 return res.cc('注册用户失败，请稍后再试!')
             }
-            res.send({
-                status: 0,
-                message:'注册成功'
+            const sqlUser = `select * from users where username=?`
+            db.query(sqlUser, userInfo.username, (err, results) => {
+                const user = { ...results[0], password: '', avatar: '' }
+                const tokenStr = jwt.sign(user, config.jwtSecretKey, { expiresIn: config.expiresIn })
+                res.send({
+                    status: 0,
+                    message: '注册成功',
+                    token: 'Bearer ' + tokenStr
+                })
             })
+           
         })
     })
 }
