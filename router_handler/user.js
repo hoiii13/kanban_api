@@ -51,7 +51,7 @@ exports.login = (req, res) => {
     const sql = `select * from users where username=?`
     db.query(sql, userInfo.username, (err, results) => {
         if(err) return res.cc(err)
-        if(results.length !== 1) return res.cc('登录失败！')
+        if(results.length !== 1) return res.cc('登录失败！没有该用户')
 
         //判断密码是否正确
         const compareResult =  bcrypt.compareSync(userInfo.password, results[0].password)
