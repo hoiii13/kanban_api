@@ -39,12 +39,21 @@ app.use('/my', userinfoRouter)
 const projectRouter = require('./router/project')
 app.use('/project', projectRouter)
 
+const taskRouter = require('./router/task')
+app.use('/task', taskRouter)
+
+const memberRouter = require('./router/member')
+app.use('/member', memberRouter)
+
+const othersRouter = require('./router/others')
+app.use('/others', othersRouter)
+
 app.use((err, req, res, next) => {
     if(err instanceof joi.ValidationError) return res.cc(err)
     if(err.name === 'UnauthorizedError') return res.cc('身份认证失败！')
     res.cc(err)
 })
 
-app.listen(8082,function() {
-    console.log('This is http://127.0.0.1:8082');
+app.listen(8081,function() {
+    console.log('This is http://127.0.0.1:8081');
 }) 

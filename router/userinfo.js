@@ -10,7 +10,7 @@ const expressjoi = require('@escook/express-joi')
 const {update_userinfo_schema, update_password_schema, update_avatar_schema} = require('../schema/user')
 
 //获取用户基本信息
-router.get('/userInfo', userInfo_handler.getUserInfo)
+router.post('/userInfo', userInfo_handler.getUserInfo)
 // 更新用户基本信息
 router.post('/update_user', expressjoi(update_userinfo_schema), userInfo_handler.updateUserInfo)
 //更新密码 
