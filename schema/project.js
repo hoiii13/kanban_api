@@ -2,7 +2,7 @@ const joi =  require('joi')
 
 const project_id = joi.number().required()
 const project_name = joi.string().required()
-const project_desc = joi.string().required()
+const project_desc = joi.string().allow('')
 const start_time = joi.number().integer().required()
 const end_time = joi.number().integer().required()
 const creator_id = joi.number().integer().min(1).required()

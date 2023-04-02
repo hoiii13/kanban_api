@@ -16,4 +16,6 @@ router.post('/delete', projectHandler.delProject)
 
 router.post('/list', projectHandler.getProjects)
 
+router.post('/info', projectHandler.getProject)
+
 module.exports = router

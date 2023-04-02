@@ -7,7 +7,6 @@ const username = joi.string().required()
 exports.add_member_schema = {
     body: {
         project_id,
-        user_id,
         username
     }
 }

@@ -2,8 +2,8 @@ const db = require('../db/index')
 
 //向任务中添加其他相关成员
 exports.addOthers = (req, res) => {
-    const sqlTask = `select * from tasks where task_id=?`
-    db.query(sqlTask, req.body.task_id, (err, results) => {
+    const sqlTask = `select * from tasks where task_id=? and status=?`
+    db.query(sqlTask,[ req.body.task_id, 0], (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该任务不存在')
 
@@ -28,8 +28,8 @@ exports.addOthers = (req, res) => {
 }
 
 exports.delOthers = (req, res) => {
-    const sqlTask = `select * from tasks where task_id=?`
-    db.query(sqlTask, req.body.task_id, (err, results) => {
+    const sqlTask = `select * from tasks where task_id=? and status=?`
+    db.query(sqlTask, [req.body.task_id, 0], (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该任务不存在')
 

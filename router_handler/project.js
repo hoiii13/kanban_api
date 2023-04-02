@@ -16,7 +16,7 @@ exports.createProject = (req, res) => {
         creator: req.auth.username,
         status: 0,
     }
-    
+
     const sqlCreate = `insert into projects set ?`
         db.query(sqlCreate, projectInfo, (err, results) => {
             if(err) return res.cc(err)
@@ -42,6 +42,7 @@ exports.createProject = (req, res) => {
         })
 }
 
+
 //编辑项目
 exports.editProject = (req, res) => {
     if(!req.body?.project_name) {
@@ -56,8 +57,8 @@ exports.editProject = (req, res) => {
         creator_id: req.auth.id,
         creator: req.auth.username
     }
-    const sqlProject = `select * from projects where project_id=?`
-    db.query(sqlProject, projectInfo.project_id, (err, results) => {
+    const sqlProject = `select * from projects where project_id=? and status=?`
+    db.query(sqlProject, [projectInfo.project_id, 0], (err, results) => {
         if(err)  return res.cc(err)
         if(results.length !== 1) return res.cc('该项目不存在!')
   
@@ -85,10 +86,11 @@ exports.editProject = (req, res) => {
     })
 }
 
+
 //删除项目
 exports.delProject = (req, res) => {
     const id = req.body.project_id
-    const sqlProject = `select * from projects where project_id=?`
+    const sqlProject = `select * from projects where project_id=? and status=0`
     db.query(sqlProject, req.body.project_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该项目不存在!')
@@ -108,36 +110,81 @@ exports.delProject = (req, res) => {
     })
 }
 
+//降序排序
+function sortId(a, b) {
+    return b.project_id - a.project_id
+}
+
+//每条项目的数据
+exports.getProject = (req, res) => {
+    const sqlProject = `select * from projects where project_id=? and status=0`
+    db.query(sqlProject, req.body.project_id, (err, infoResults) => {
+        if(err) return res.cc(err)
+        if(infoResults.length !== 1) return res.cc('该项目不存在');
+
+        const sqlMembers = `select * from members where project_id=?`
+        db.query(sqlMembers, req.body.project_id, (err, reuslts) => {
+            if(err) return res.cc(err)
+
+            const members = []
+            reuslts.forEach((e) => {
+                members.push({
+                    user_id: e.user_id,
+                    username: e.username
+                })
+            })
+
+            const projectItem = {...infoResults[0], members: members}
+            console.log('project', projectItem);
+
+            res.send({
+                status: 0,
+                message: projectItem
+            })
+
+        })
+    })
+}
+
 //查询项目列表
 exports.getProjects = (req, res) => {
-    const sql = `select * from projects where creator_id=? and status=?`
+    const sql = `select * from projects where creator_id=? and status=? order by project_id desc`
     db.query(sql, [req.auth.id, 0], (err, results) => {
         if(err) return res.cc(err)
         
         //将该项目的成员的数据加入列表信息中
         var projectList = []
         var len = results.length
+        
 
         results.forEach((value, index) => {
+            
             const sqlMembers = `select * from members where project_id=?`
-            db.query(sqlMembers, value.project_id, (err, results) => {
-                if(err) return res.cc(err)
-                const members = []
-                results.forEach((e) => {
-                    members.push({
-                        user_id: e.user_id,
-                        username: e.username
+            db.query(sqlMembers, value.project_id, (err, membersResults) => {
+                if(err){
+                    return res.cc(err)
+                } else {
+                    
+                    const members = []
+                    membersResults.forEach((e) => {
+                        members.push({
+                            user_id: e.user_id,
+                            username: e.username
+                        })
                     })
-                })
-                const projectItem = {...value, members: members}
-                projectList.push(projectItem)
-
-                if(len == index + 1) {
-                    return res.send({
-                        status: 0,
-                        message: projectList
-                    })
+    
+                    const projectItem = {...value, members: members}
+                    
+                    projectList.push(projectItem)
+                    if(projectList.length == len) {
+                        var list = projectList.sort(sortId)
+                        return res.send({
+                            status: 0,
+                            message: list
+                        })
+                    }
                 }
+                
             })
         })
         if(len == 0) {
