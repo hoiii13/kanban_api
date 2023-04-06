@@ -2,7 +2,6 @@ const db = require('../db/index')
 
 //创建任务
 exports.createTask = (req, res) => {
-    console.log('req', req.body);
 
     const taskInfo = {
         task_name: req.body.task_name,
@@ -72,6 +71,58 @@ exports.editTask = (req, res) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该任务不存在')
 
+        const sqlOthers = `select * from others where task_id=?`
+        db.query(sqlOthers, req.body.task_id, (err, oldResults) => {
+            if(err) return res.cc(err)
+           
+        //判断others是向表中增加还是减少数据 
+        const oldOthersList = oldResults
+        const newOthersList = req.body.others
+        var lenOld = oldOthersList.length
+        var lenNew = newOthersList.length
+        
+        if(lenOld > lenNew) {
+            oldOthersList.forEach((item) => {
+                var count = 0
+                newOthersList.forEach((value) => {
+                    if(item["user_id"] != value["user_id"] || item["username"] != value["username"]) {
+                        count++
+                    }
+                })
+                if(count == lenNew) {
+                    const sqlRemove = `delete from others where task_id=? and user_id=?`
+                    db.query(sqlRemove, [req.body.task_id, item.user_id], (err, removeResults) => {
+                        if(err) return res.cc(err)
+                        if(removeResults.affectedRows !== 1) return res.cc('修改失败')
+                    })
+    
+                }
+            })
+        } else if(lenOld < lenNew) {
+            newOthersList.forEach((item) => {
+                
+                var count = 0
+                oldOthersList.forEach((value) => {
+                    if(item["user_id"] != value["user_id"] || item["username"] != value["username"]) {
+                        count++
+                    }
+                })
+               
+                if(count == lenOld) {
+                    const sqlAdd = `insert into others set ?`
+                    const info = {
+                        "task_id": req.body.task_id,
+                        "user_id": item.user_id,
+                        "username": item.username
+                    }
+                    db.query(sqlAdd, info, (err, addResults) => {
+                        if(err) return res.cc(err)
+                        if(addResults.affectedRows !== 1) return res.cc('修改失败')
+                    })
+    
+                }
+            })
+        }
         const taskInfo = {
             task_name: req.body.task_name,
             task_desc: req.body.task_desc,
@@ -93,6 +144,8 @@ exports.editTask = (req, res) => {
                 message: '更新成功'
             })
         })
+        })
+        
     })
 }
 
