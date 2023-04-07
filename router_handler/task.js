@@ -149,6 +149,30 @@ exports.editTask = (req, res) => {
     })
 }
 
+//任务详情
+exports.getTaskInfo = (req, res) => {
+    const id = req.body.task_id
+    const sqlTask = `select * from tasks where task_id=? and status=0`
+    db.query(sqlTask, id, (err, taskResults) => {
+        if (err) return res.cc(err)
+        if (taskResults.length !== 1) return res.cc('该任务不存在')
+
+        const info = taskResults[0]
+        const sqlOthers = `select * from others where task_id=?`
+        db.query(sqlOthers, id, (err, results) => {
+            if (err) return res.cc(err)
+           
+            const othersList = results
+            const taskInfo = { ...info, others: othersList}
+            res.send({
+                status: 0,
+                message: taskInfo
+            })
+        })
+        
+    })
+}
+
 //删除任务
 exports.delTask = (req, res) => {
     const id = req.body.task_id

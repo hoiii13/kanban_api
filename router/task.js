@@ -12,6 +12,8 @@ router.post('/create', expressjoi(creatr_task_schema), taskHandler.createTask)
 
 router.post('/edit', expressjoi(edit_task_schema), taskHandler.editTask)
 
+router.post('/info', taskHandler.getTaskInfo)
+
 router.post('/delete', taskHandler.delTask)
 
 router.post('/list', taskHandler.getTasks)
