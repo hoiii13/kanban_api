@@ -18,4 +18,6 @@ router.post('/list', projectHandler.getProjects)
 
 router.post('/info', projectHandler.getProject)
 
+router.post('/search', projectHandler.searchProjects)
+
 module.exports = router

@@ -193,9 +193,14 @@ exports.delTask = (req, res) => {
     })
 }
 
+//降序排序
+function sortId(a, b) {
+    return b.task_id - a.task_id
+}
+
 //任务列表
 exports.getTasks = (req, res) => {
-    const sql = `select * from tasks where project_id=? and status=?`
+    const sql = `select * from tasks where project_id=? and status=? order by task_id desc`
     db.query(sql, [req.body.project_id, 0], (err, results) => {
         if(err) return res.cc(err)
 
@@ -217,9 +222,10 @@ exports.getTasks = (req, res) => {
                 const taskItem = {...value, others: othersPeople}
                 taskList.push(taskItem)
                 if(taskList.length == len) {
+                    var list = taskList.sort(sortId)
                     return res.send({
                         status: 0,
-                        message: taskList
+                        message: list
                     })
                 } 
             })
@@ -232,5 +238,17 @@ exports.getTasks = (req, res) => {
             })
         }
          
+    })
+}
+
+//项目搜索
+exports.searchTasks = (req, res) => {
+    const sql = "select * from tasks where project_id=" +req.body.project_id + " and task_name like '%" + req.body.name + "%' order by task_id desc";
+    db.query(sql, (err, results) => {
+        if(err) return res.cc(err)
+        res.send({ 
+            status:0,
+            message: results
+        })
     })
 }

@@ -135,7 +135,6 @@ exports.getProject = (req, res) => {
             })
 
             const projectItem = {...infoResults[0], members: members}
-            console.log('project', projectItem);
 
             res.send({
                 status: 0,
@@ -196,4 +195,16 @@ exports.getProjects = (req, res) => {
         
     })
     
+}
+
+//项目搜索
+exports.searchProjects = (req, res) => {
+    const sql = "select * from projects where project_name like '%" + req.body.name + "%' order by project_id desc";
+    db.query(sql, (err, results) => {
+        if(err) return res.cc(err)
+        res.send({ 
+            status:0,
+            message: results
+        })
+    })
 }
