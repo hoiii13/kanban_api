@@ -33,7 +33,7 @@ exports.update_password_schema = {
     }
 }
 
-const avatar = joi.string().dataUri().required()
+const avatar = joi.string().required()
 
 //验证头像的规则
 exports.update_avatar_schema = {
