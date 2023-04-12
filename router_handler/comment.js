@@ -2,24 +2,33 @@ const db = require('../db/index')
 
 //新增评论
 exports.addComment = (req, res) => {
-    const sqlTask = `select * from tasks where task_id=? and status=?`
-    db.query(sqlTask, [req.body.task_id, 0], (err, results) => {
-        if(err) return res.cc(err)
-        if(results.length !== 1) return res.cc('该任务不存在')
-
-        const info = {...req.body, user_id: req.auth.id, username: req.auth.username, avatar: req.auth.avatar}
-        const sql = `insert into comments set ?`
-        //console.log('info', info);
-        db.query(sql, info, (err, results) => {
+    const sqlUser = `select * from users where id=?`
+    db.query(sqlUser, req.auth.id, (err, userResult) => {
+        if (err) return res.cc(err)
+        if (userResult.length !== 1) return res.cc('用户不存在')
+        //console.log('user', userResult[0].avatar);
+        
+        const sqlTask = `select * from tasks where task_id=? and status=?`
+        db.query(sqlTask, [req.body.task_id, 0], (err, results) => {
             if(err) return res.cc(err)
-            if(results.affectedRows !== 1) return res.cc('评论失败')
-
-            res.send({
-                status:0,
-                message: '评论成功'
+            if (results.length !== 1) return res.cc('该任务不存在')
+            console.log('ac', req.auth.avatar);
+    
+            const info = {...req.body, user_id: req.auth.id, username: req.auth.username, avatar: userResult[0].avatar}
+            const sql = `insert into comments set ?`
+            console.log('info', info);
+            db.query(sql, info, (err, results) => {
+                if(err) return res.cc(err)
+                if(results.affectedRows !== 1) return res.cc('评论失败')
+    
+                res.send({
+                    status:0,
+                    message: '评论成功'
+                })
             })
         })
     })
+   
 }
 
 //查询任务中的评论列表
@@ -40,4 +49,8 @@ exports.getTaskComment = (req, res) => {
         })
        
     })
+}
+
+exports.getUserComment = (req, res) => {
+    //const sqlTask = `select * from comments where `
 }

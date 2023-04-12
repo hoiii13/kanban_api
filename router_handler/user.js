@@ -59,9 +59,7 @@ exports.login = (req, res) => {
 
         //清除用户敏感信息
         const user = {...results[0], password: '', avatar: ''}
-
         const tokenStr = jwt.sign(user, config.jwtSecretKey, {expiresIn: config.expiresIn})
-        console.log('result', results)
         res.send({
             status: 0,
             message: '登录成功！',

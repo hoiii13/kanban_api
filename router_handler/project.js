@@ -147,9 +147,10 @@ exports.getProject = (req, res) => {
 
 //查询项目列表
 exports.getProjects = (req, res) => {
-    const sql = `select * from projects where creator_id=? and status=? order by project_id desc`
-    db.query(sql, [req.auth.id, 0], (err, results) => {
-        if(err) return res.cc(err)
+    const sql = `select * from members where user_id=?`
+    db.query(sql, req.auth.id, (err, results) => {
+        if (err) return res.cc(err)
+        console.log('result', results);
         
         //将该项目的成员的数据加入列表信息中
         var projectList = []
@@ -158,12 +159,35 @@ exports.getProjects = (req, res) => {
 
         results.forEach((value, index) => {
             
-            const sqlMembers = `select * from members where project_id=?`
-            db.query(sqlMembers, value.project_id, (err, membersResults) => {
+            const sqlProject = `select * from projects where project_id=?`
+            db.query(sqlProject, value.project_id, (err, projectResults) => {
                 if(err){
                     return res.cc(err)
                 } else {
-                    
+                   
+                    const sqlMembers = `select * from members where project_id=?`
+                    db.query(sqlMembers, projectResults[0].project_id, (err, membersResults) => {
+                        if (err) {
+                            return res.cc(err)
+                        } else {
+                            const members = []
+                            membersResults.forEach((e) => {
+                                members.push({
+                                    user_id: e.user_id,
+                                    username: e.username
+                                })
+                            })
+                            const projectItem = { ...projectResults[0], members: members }
+                            projectList.push(projectItem)
+                            if(projectList.length == len) {
+                                var list = projectList.sort(sortId)
+                                return res.send({
+                                    status: 0,
+                                    message: list
+                                })
+                            }
+                        }
+                    })                    /* console.log('1111', projectResults);
                     const members = []
                     membersResults.forEach((e) => {
                         members.push({
@@ -181,7 +205,7 @@ exports.getProjects = (req, res) => {
                             status: 0,
                             message: list
                         })
-                    }
+                    } */
                 }
                 
             })
