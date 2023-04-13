@@ -57,7 +57,7 @@ exports.editProject = (req, res) => {
         creator_id: req.auth.id,
         creator: req.auth.username
     }
-    const sqlProject = `select * from projects where project_id=? and status=?`
+    const sqlProject = `select * from projects where project_id=?`
     db.query(sqlProject, [projectInfo.project_id, 0], (err, results) => {
         if(err)  return res.cc(err)
         if(results.length !== 1) return res.cc('该项目不存在!')
@@ -90,23 +90,30 @@ exports.editProject = (req, res) => {
 //删除项目
 exports.delProject = (req, res) => {
     const id = req.body.project_id
-    const sqlProject = `select * from projects where project_id=? and status=0`
+    const sqlProject = `select * from projects where project_id=?`
     db.query(sqlProject, req.body.project_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该项目不存在!')
 
-        if(results[0].creator_id != req.auth.id) return res.cc('没有删除权限')
+        if (results[0].creator_id != req.auth.id) return res.cc('没有删除权限')
 
-        const sql = `update projects set status=? where project_id=?`
-        db.query(sql, [1, id], (err, results) => {
-            if(err) return res.cc(err)
-            if(results.affectedRows !== 1) return res.cc('删除失败')
-
-            res.send({
-                status: 0,
-                message: '删除成功'
+        const sql = `delete from projects where project_id=?`
+            db.query(sql, id, (err, results) => {
+                if(err) return res.cc(err)
+                if(results.affectedRows !== 1) return res.cc('删除失败')
+    
+                const sqlMembers = `delete from members where project_id=?`
+                db.query(sqlMembers, req.body.project_id, (err, memberResult) => { 
+                    if(err) return res.cc(err)
+                   
+                    res.send({
+                        status: 0,
+                        message: '删除成功'
+                    })
+                })
+                
             })
-        })
+       
     })
 }
 
@@ -117,7 +124,7 @@ function sortId(a, b) {
 
 //每条项目的数据
 exports.getProject = (req, res) => {
-    const sqlProject = `select * from projects where project_id=? and status=0`
+    const sqlProject = `select * from projects where project_id=?`
     db.query(sqlProject, req.body.project_id, (err, infoResults) => {
         if(err) return res.cc(err)
         if(infoResults.length !== 1) return res.cc('该项目不存在');
@@ -150,7 +157,6 @@ exports.getProjects = (req, res) => {
     const sql = `select * from members where user_id=?`
     db.query(sql, req.auth.id, (err, results) => {
         if (err) return res.cc(err)
-        console.log('result', results);
         
         //将该项目的成员的数据加入列表信息中
         var projectList = []
@@ -165,11 +171,13 @@ exports.getProjects = (req, res) => {
                     return res.cc(err)
                 } else {
                    
-                    const sqlMembers = `select * from members where project_id=?`
-                    db.query(sqlMembers, projectResults[0].project_id, (err, membersResults) => {
+                        const sqlMembers = `select * from members where project_id=?`
+                        db.query(sqlMembers, projectResults[0].project_id, (err, membersResults) => {
+                           
                         if (err) {
                             return res.cc(err)
                         } else {
+                            
                             const members = []
                             membersResults.forEach((e) => {
                                 members.push({
@@ -187,7 +195,8 @@ exports.getProjects = (req, res) => {
                                 })
                             }
                         }
-                    })                    /* console.log('1111', projectResults);
+                    })         
+                              /* console.log('1111', projectResults);
                     const members = []
                     membersResults.forEach((e) => {
                         members.push({

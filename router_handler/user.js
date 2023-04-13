@@ -9,7 +9,6 @@ exports.register = (req, res) => {
 
     const sqlStr = 'select * from users where username=?'
     db.query(sqlStr, userInfo.username, (err, results) => {
-        console.log('user', results);
         if(err) {
             return res.cc(err)
         }

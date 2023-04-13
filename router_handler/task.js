@@ -66,8 +66,8 @@ exports.createTask = (req, res) => {
 
 //编辑任务
 exports.editTask = (req, res) => {
-    const sqlTask = `select * from tasks where task_id=? and status=?`
-    db.query(sqlTask, [req.body.task_id, 0], (err, results) => {
+    const sqlTask = `select * from tasks where task_id=?`
+    db.query(sqlTask, req.body.task_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该任务不存在')
 
@@ -152,7 +152,7 @@ exports.editTask = (req, res) => {
 //任务详情
 exports.getTaskInfo = (req, res) => {
     const id = req.body.task_id
-    const sqlTask = `select * from tasks where task_id=? and status=0`
+    const sqlTask = `select * from tasks where task_id=?`
     db.query(sqlTask, id, (err, taskResults) => {
         if (err) return res.cc(err)
         if (taskResults.length !== 1) return res.cc('该任务不存在')
@@ -176,19 +176,26 @@ exports.getTaskInfo = (req, res) => {
 //删除任务
 exports.delTask = (req, res) => {
     const id = req.body.task_id
-    const sqlTask = `select * from tasks where task_id=? and status=?`
-    db.query(sqlTask, [id, 0], (err, results) => {
+    const sqlTask = `select * from tasks where task_id=?`
+    db.query(sqlTask, id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该任务不存在!')
-        const sql = `update tasks set status=? where task_id=?`
-        db.query(sql, [1, id], (err, results) => {
+        const sql = `delete from tasks where task_id=?`
+        db.query(sql, id, (err, results) => {
             if(err) return res.cc(err)
-            if(results.affectedRows !== 1) return res.cc('删除失败')
-
-            res.send({
-                status: 0,
-                message: '删除成功'
+            if (results.affectedRows !== 1) return res.cc('删除失败')
+            
+            const sqlOthers = `delete from others where task_id=?`
+            db.query(sqlOthers, id, (err, othersResult) => {
+                if (err) return res.cc(err)
+                
+                res.send({
+                    status: 0,
+                    message: '删除成功'
+                })
             })
+
+            
         })
     })
 }
@@ -200,8 +207,8 @@ function sortId(a, b) {
 
 //任务列表
 exports.getTasks = (req, res) => {
-    const sql = `select * from tasks where project_id=? and status=? order by task_id desc`
-    db.query(sql, [req.body.project_id, 0], (err, results) => {
+    const sql = `select * from tasks where project_id=? order by task_id desc`
+    db.query(sql, req.body.project_id, (err, results) => {
         if(err) return res.cc(err)
 
          //将该任务的成员的数据加入列表信息中

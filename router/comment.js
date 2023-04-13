@@ -12,4 +12,6 @@ router.post('/add', expressjoi(add_comment_schema), commentHandler.addComment)
 
 router.post('/list', commentHandler.getTaskComment)
 
+router.post('/content_query', commentHandler.getUserComment)
+
 module.exports = router

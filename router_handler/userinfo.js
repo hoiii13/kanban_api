@@ -19,7 +19,6 @@ exports.getUserInfo = (req, res) => {
 
 // 更新用户基本信息
 exports.updateUserInfo = (req, res) => {
-    console.log('sql', req.body);
     const sql = 'update users set ? where id=?'
     db.query(sql,[req.body, req.body.id], (err, results) => {
         if(err) return res.cc(err)

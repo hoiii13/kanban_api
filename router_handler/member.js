@@ -2,8 +2,8 @@ const db = require('../db/index')
 
 //项目中添加成员
 exports.addMembers = (req, res) => {
-    const sqlProject = `select * from projects where project_id=? and status=?`
-    db.query(sqlProject, [req.body.project_id, 0], (err, results) => {
+    const sqlProject = `select * from projects where project_id=?`
+    db.query(sqlProject, req.body.project_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该项目不存在')
         if(results[0].creator_id != req.auth.id) return res.cc('没有添加成员的权限')
@@ -42,8 +42,8 @@ exports.addMembers = (req, res) => {
 //项目中删除成员
 
 exports.delMember = (req, res) => {
-    const sqlProject = `select * from projects where project_id=? and status=?`
-    db.query(sqlProject, [req.body.project_id, 0], (err, results) => {
+    const sqlProject = `select * from projects where project_id=?`
+    db.query(sqlProject, req.body.project_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length !== 1) return res.cc('该项目不存在')
         if(results[0].creator_id != req.auth.id) return res.cc('没有移除成员的权限')
