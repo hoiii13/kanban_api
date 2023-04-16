@@ -54,8 +54,43 @@ exports.getTaskComment = (req, res) => {
 }
 
 exports.getUserComment = (req, res) => {
-    const commentsList = {}
-    const sqlProject = `select * from members where user_id=?`
+
+    const commentsList = []
+    const sqlComments = `select * from comments where user_id=?`
+    db.query(sqlComments, req.auth.id, (err, commentResult) => {
+        if(err) return res.cc(err)
+
+        var len = commentResult.length
+        var count = 0
+        console.log('@@', commentResult);
+        var isPush = false
+        commentResult.array.forEach(value => {
+            for(var i = 0; i < commentsList.length; i++) {
+                if(commentsList[i].task_id == value.task_id) {
+                    commentsList.comments.push(value)
+                    isPush = true
+                    break
+                }
+            }
+            if(!isPush) {
+                const sqlTask = `select * from tasks where task_id=?`
+                db.query(sqlTask, value.task_id, (err, taskResult) => {
+                    if(err) return res.cc(err)
+                    var content = []
+                    content.push(value)
+                    commentsList.push({
+                        task_id: value.task_id,
+                        task_name: taskResult[0].task_name,
+                        comments: content
+                    })
+                })
+            }
+            count++
+        
+        });
+        
+    })
+    /* const sqlProject = `select * from members where user_id=?`
     db.query(sqlProject, req.auth.id, (err, projectResult) => {
         if (err) return res.cc(err)
        
@@ -64,7 +99,7 @@ exports.getUserComment = (req, res) => {
             db.query(sqlTask, project.project_id, (err, taskResults) => {
                
                 if (err) return res.cc(err)
-
+                console.log('@@', taskResults);
                 taskResults.forEach((taskItem) => {
                     
                     const sqlComments = `select * from comments where task_id=?`
@@ -72,8 +107,8 @@ exports.getUserComment = (req, res) => {
                         if (err) return res.cc(err)
                         
                         commentResults.forEach((comments) => {
-                            commentsList['a'].push(comments)
-                            console.log('@@', comments);
+                            //commentsList['a'].push(comments)
+                            
                         })
                       
                         
@@ -82,5 +117,5 @@ exports.getUserComment = (req, res) => {
                 
             })
         })
-    })
+    }) */
 }
