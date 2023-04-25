@@ -196,25 +196,6 @@ exports.getProjects = (req, res) => {
                             }
                         }
                     })         
-                              /* console.log('1111', projectResults);
-                    const members = []
-                    membersResults.forEach((e) => {
-                        members.push({
-                            user_id: e.user_id,
-                            username: e.username
-                        })
-                    })
-    
-                    const projectItem = {...value, members: members}
-                    
-                    projectList.push(projectItem)
-                    if(projectList.length == len) {
-                        var list = projectList.sort(sortId)
-                        return res.send({
-                            status: 0,
-                            message: list
-                        })
-                    } */
                 }
                 
             })

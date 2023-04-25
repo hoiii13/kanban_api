@@ -9,3 +9,4 @@
 - 实现自动对表单数据进行验证的功能：@escook/express-joi
 - 生成 token 字符串的包：josonwebtoken
 - 解析 token 的中间件：express-jwt
+- 异步：async

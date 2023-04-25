@@ -18,7 +18,7 @@ exports.register = (req, res) => {
         }
 
         //调用bcrypt.hashSync()对密码加密
-        userInfo.password = bcrypt.hashSync(userInfo.password, 10)
+        userInfo.password = bcrypt.hashSync(userInfo.password, 30)
         console.log('user',userInfo)
         const sql = 'insert into users set ?'
         db.query(sql, {username: userInfo.username, password: userInfo.password},(err, results) => {

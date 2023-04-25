@@ -53,69 +53,90 @@ exports.getTaskComment = (req, res) => {
     })
 }
 
+// 数组结构
+/* commentListItem {
+    task_id: number
+    task_name: string
+    comments: Array<commentItem>
+}
+commentItem {
+    comment_id: number
+    task_id: number
+    user_id: number
+    create_time: number
+    comment: string
+    username: string
+    avatar: string
+}
+ */
+
+//得到与用户有关的评论
 exports.getUserComment = (req, res) => {
-
-    const commentsList = []
-    const sqlComments = `select * from comments where user_id=?`
-    db.query(sqlComments, req.auth.id, (err, commentResult) => {
-        if(err) return res.cc(err)
-
-        var len = commentResult.length
-        var count = 0
-        console.log('@@', commentResult);
-        var isPush = false
-        commentResult.array.forEach(value => {
-            for(var i = 0; i < commentsList.length; i++) {
-                if(commentsList[i].task_id == value.task_id) {
-                    commentsList.comments.push(value)
-                    isPush = true
-                    break
-                }
+    let commentsList = []
+    const sqlComments = `select * from comments order by comment_id desc`
+    db.query(sqlComments, async (err, commentResult) => {
+        if (err) return res.cc(err)
+        
+        const myName = '@' + req.auth.username + ' '
+        let aboutMeList = []
+        
+        let allNum = 0
+        
+        //得到@用户的数据
+        for (let z = 0; z < commentResult.length; z++) {
+            if (commentResult[z].comment.indexOf(myName) != -1) {
+                aboutMeList.push(commentResult[z])
             }
-            if(!isPush) {
-                const sqlTask = `select * from tasks where task_id=?`
-                db.query(sqlTask, value.task_id, (err, taskResult) => {
-                    if(err) return res.cc(err)
-                    var content = []
-                    content.push(value)
-                    commentsList.push({
-                        task_id: value.task_id,
-                        task_name: taskResult[0].task_name,
-                        comments: content
-                    })
+        }
+        const len = aboutMeList.length
+        let count = 0
+
+        for (let i = 0; i < aboutMeList.length; i++){
+            
+             //遍历数组，若task_id存在，则将评论信息push进该条数据的comments中
+            count = 0
+            for (let j = 0; j < commentsList.length; j++) {
+                 if (commentsList[j].task_id == aboutMeList[i].task_id) {
+                     commentsList[j].comments.push(aboutMeList[i])
+                     allNum = allNum + 1
+                     break
+                 } else {
+                 count++
+                 }
+                 
+             }
+         
+         //遍历数组结束，若commentsList中还不存在任务id为当前task_id的，则数组长度+1，存入任务信息和评论内容
+            if (count == commentsList.length ) {
+                let taskInfo = await queryTask(aboutMeList[i].task_id)
+                let comments = []
+                comments.push(aboutMeList[i])
+                commentsList.push({
+                    task_id: aboutMeList[i].task_id,
+                    task_name: taskInfo[0].task_name,
+                    comments: comments
+                })
+                allNum = allNum + 1
+            }
+            if (allNum == aboutMeList.length) {
+                res.send({
+                    status: 0,
+                    message: commentsList
                 })
             }
-            count++
-        
-        });
+        }
         
     })
-    /* const sqlProject = `select * from members where user_id=?`
-    db.query(sqlProject, req.auth.id, (err, projectResult) => {
-        if (err) return res.cc(err)
-       
-        projectResult.forEach((project) => {
-            const sqlTask = `select * from tasks where project_id=?`
-            db.query(sqlTask, project.project_id, (err, taskResults) => {
-               
-                if (err) return res.cc(err)
-                console.log('@@', taskResults);
-                taskResults.forEach((taskItem) => {
-                    
-                    const sqlComments = `select * from comments where task_id=?`
-                    db.query(sqlComments, taskItem.task_id, (err, commentResults) => {
-                        if (err) return res.cc(err)
-                        
-                        commentResults.forEach((comments) => {
-                            //commentsList['a'].push(comments)
-                            
-                        })
-                      
-                        
-                    })
-                })
-                
-            })
+
+}
+
+// 请求数据库中任务的数据
+function queryTask( task_id) {
+    return new Promise((resolve, reject) => {
+        const sqlTask = `select * from tasks where task_id=?`
+        db.query(sqlTask, task_id, (err, taskResults) => { 
+            if (err) return res.cc(err)
+            resolve(taskResults)
         })
-    }) */
+    })
 }
