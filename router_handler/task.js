@@ -248,7 +248,10 @@ exports.getTasks = (req, res) => {
     })
 }
 
-//项目搜索
+
+
+
+//任务搜索
 exports.searchTasks = (req, res) => {
     const sql = "select * from tasks where project_id=" +req.body.project_id + " and task_name like '%" + req.body.name + "%' order by task_id desc";
     db.query(sql, (err, results) => {

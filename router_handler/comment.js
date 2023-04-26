@@ -125,13 +125,19 @@ exports.getUserComment = (req, res) => {
                 })
             }
         }
+        if (len == 0) {
+            res.send({
+                status: 0,
+                message: commentsList
+            })
+        }
         
     })
 
 }
 
 // 请求数据库中任务的数据
-function queryTask( task_id) {
+function queryTask(task_id) {
     return new Promise((resolve, reject) => {
         const sqlTask = `select * from tasks where task_id=?`
         db.query(sqlTask, task_id, (err, taskResults) => { 

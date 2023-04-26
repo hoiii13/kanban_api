@@ -152,7 +152,7 @@ exports.getProject = (req, res) => {
     })
 }
 
-//查询项目列表
+//查询用户相关的项目列表
 exports.getProjects = (req, res) => {
     const sql = `select * from members where user_id=?`
     db.query(sql, req.auth.id, (err, results) => {
@@ -172,7 +172,7 @@ exports.getProjects = (req, res) => {
                 } else {
                    
                         const sqlMembers = `select * from members where project_id=?`
-                        db.query(sqlMembers, projectResults[0].project_id, (err, membersResults) => {
+                        db.query(sqlMembers, projectResults[0].project_id, async (err, membersResults) => {
                            
                         if (err) {
                             return res.cc(err)
@@ -185,10 +185,13 @@ exports.getProjects = (req, res) => {
                                     username: e.username
                                 })
                             })
-                            const projectItem = { ...projectResults[0], members: members }
+                            let columnList = await getColumnStatusNum(projectResults[0].project_id)
+                            console.log('test', columnList);
+                            const projectItem = { ...projectResults[0], members: members, column: columnList }
                             projectList.push(projectItem)
                             if(projectList.length == len) {
                                 var list = projectList.sort(sortId)
+                                
                                 return res.send({
                                     status: 0,
                                     message: list
@@ -211,6 +214,7 @@ exports.getProjects = (req, res) => {
     
 }
 
+
 //项目搜索
 exports.searchProjects = (req, res) => {
     const sql = "select * from projects where project_name like '%" + req.body.name + "%' order by project_id desc";
@@ -220,5 +224,46 @@ exports.searchProjects = (req, res) => {
             status:0,
             message: results
         })
+    })
+}
+
+function getColumnStatusNum(project_id) {
+    return new Promise((resolve, reject) => {
+        const sql = `select * from tasks where project_id=? order by task_id desc`
+        db.query(sql, project_id, (err, results) => {
+       // if(err) return res.cc(err)
+         //将该任务的成员的数据加入列表信息中
+        var taskList = []
+        var len = results.length
+        let columnList = [{name: '预备', count: 0},{name: '开发', count: 0},{name: '测试', count: 0},{name: '完成', count: 0}]
+
+        results.forEach((value, index) => {
+            const sqlOthers = `select * from others where task_id=?`
+            db.query(sqlOthers, value.task_id, (err, results) => {
+                if(err) return res.cc(err)
+                const othersPeople = []
+                results.forEach((e) => {
+                    othersPeople.push({
+                        user_id: e.user_id,
+                        username: e.username
+                    })
+                })
+                const taskItem = {...value, others: othersPeople}
+                taskList.push(taskItem)
+                if(taskList.length == len) {
+                    var list = taskList.sort(sortId)
+                    for (var i = 0; i < list.length; i++) {
+                        columnList[list[i]["column"]]["count"]++
+                    }
+                    resolve(columnList)
+                } 
+            })
+        })
+
+        if(len == 0) {
+            resolve(columnList)
+        }
+         
+    })
     })
 }
