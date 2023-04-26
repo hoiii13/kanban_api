@@ -217,7 +217,7 @@ exports.getTasks = (req, res) => {
 
         results.forEach((value, index) => {
             const sqlOthers = `select * from others where task_id=?`
-            db.query(sqlOthers, value.task_id, (err, results) => {
+            db.query(sqlOthers, value.task_id, async (err, results) => {
                 if(err) return res.cc(err)
                 const othersPeople = []
                 results.forEach((e) => {
@@ -226,7 +226,9 @@ exports.getTasks = (req, res) => {
                         username: e.username
                     })
                 })
-                const taskItem = {...value, others: othersPeople}
+                let userInfo = await getUserInfo(value.actor_id)
+                
+                const taskItem = {...value, others: othersPeople,  avatar: userInfo["avatar"]}
                 taskList.push(taskItem)
                 if(taskList.length == len) {
                     var list = taskList.sort(sortId)
@@ -249,6 +251,20 @@ exports.getTasks = (req, res) => {
 }
 
 
+function getUserInfo(id) {
+
+   return new Promise((resolve, reject) => {
+        const sqlUser = `select avatar from users where id=?`
+        db.query(sqlUser, id, (err, results) => {
+            /* if (err) return res.send({
+                status: 1,
+                message: '查询失败'
+            }) */
+            resolve(results[0])
+        })
+    })
+    
+}
 
 
 //任务搜索

@@ -17,6 +17,22 @@ exports.getUserInfo = (req, res) => {
 })
 }
 
+//获取其他用户信息
+exports.getOtherUserInfo = (req, res) => {
+    const sql = 'select id, username, nickname, email, avatar from users where id=?'
+    //req.auth可以解析token
+    db.query(sql, req.body.id, (err, results) => {
+    if(err) return res.cc(err)
+    if(results.length !== 1) return res.cc('获取用户信息失败！')
+
+    res.send({
+        status: 0,
+        message: '获取用户信息成功',
+        data: results[0]
+    })
+})
+}
+
 // 更新用户基本信息
 exports.updateUserInfo = (req, res) => {
     const sql = 'update users set ? where id=?'

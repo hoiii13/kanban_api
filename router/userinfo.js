@@ -11,6 +11,8 @@ const {update_userinfo_schema, update_password_schema, update_avatar_schema} = r
 
 //获取用户基本信息
 router.post('/userInfo', userInfo_handler.getUserInfo)
+//获取其他用户信息
+router.post('/info', userInfo_handler.getOtherUserInfo)
 // 更新用户基本信息
 router.post('/update_user', expressjoi(update_userinfo_schema), userInfo_handler.updateUserInfo)
 //更新密码 

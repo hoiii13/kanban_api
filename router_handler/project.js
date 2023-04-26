@@ -218,15 +218,32 @@ exports.getProjects = (req, res) => {
 //项目搜索
 exports.searchProjects = (req, res) => {
     const sql = "select * from projects where project_name like '%" + req.body.name + "%' order by project_id desc";
-    db.query(sql, (err, results) => {
-        if(err) return res.cc(err)
-        res.send({ 
-            status:0,
-            message: results
-        })
+    db.query(sql, async (err, results) => {
+        if (err) return res.cc(err)
+        let projectList = []
+        const len = results.length
+        for (let i = 0; i < results.length; i++) {
+            let columnList = await getColumnStatusNum(results[i].project_id)
+            const projectItem = { ...results[i], column: columnList }
+            projectList.push(projectItem)
+            if (projectList.length == len) {
+                res.send({ 
+                    status:0,
+                    message: projectList
+                })
+            }
+        }
+        if (len == 0) {
+            res.send({ 
+                status:0,
+                message: []
+            })
+        }
+       
     })
 }
 
+//项目中任务各状态数量
 function getColumnStatusNum(project_id) {
     return new Promise((resolve, reject) => {
         const sql = `select * from tasks where project_id=? order by task_id desc`
