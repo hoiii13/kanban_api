@@ -114,6 +114,7 @@ exports.getUserComment = (req, res) => {
                 commentsList.push({
                     task_id: aboutMeList[i].task_id,
                     task_name: taskInfo[0].task_name,
+                    project_id: taskInfo[0].project_id,
                     comments: comments
                 })
                 allNum = allNum + 1
