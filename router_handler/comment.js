@@ -12,7 +12,7 @@ exports.addComment = (req, res) => {
             if(err) return res.cc(err)
             if (results.length !== 1) return res.cc('该任务不存在')
     
-            const info = {...req.body, user_id: req.auth.id, username: req.auth.username, avatar: userResult[0].avatar}
+            const info = {...req.body, user_id: req.auth.id, username: req.auth.username}
             const sql = `insert into comments set ?`
             db.query(sql, info, (err, results) => {
                 if(err) return res.cc(err)
@@ -41,9 +41,18 @@ exports.getTaskComment = (req, res) => {
         if(results.length !== 1) return res.cc('该任务不存在')
 
         const sql = `select * from comments where task_id=?`
-        db.query(sql, req.body.task_id, (err, results) => {
+        db.query(sql, req.body.task_id, async (err, results) => {
             if (err) return res.cc(err)
-            var list = results.sort(sortId)
+            
+            var commentList = results
+            for (let i = 0; i < results.length; i++) {
+                let userInfo = await queryUser(results[i].user_id)
+                if (userInfo) {
+                    commentList[i].avatar = userInfo[0].avatar
+                }
+            }
+          
+            var list = commentList.sort(sortId)
             res.send({
                 status: 0,
                 message: list
@@ -92,7 +101,7 @@ exports.getUserComment = (req, res) => {
         let count = 0
 
         for (let i = 0; i < aboutMeList.length; i++){
-            
+
              //遍历数组，若task_id存在，则将评论信息push进该条数据的comments中
             count = 0
             for (let j = 0; j < commentsList.length; j++) {
@@ -142,8 +151,25 @@ function queryTask(task_id) {
     return new Promise((resolve, reject) => {
         const sqlTask = `select * from tasks where task_id=?`
         db.query(sqlTask, task_id, (err, taskResults) => { 
-            if (err) return res.cc(err)
+            if (err) return res.send({
+                status: 1,
+                message: '获取失败'
+            })
             resolve(taskResults)
+        })
+    })
+}
+
+// 请求数据库中用户的数据
+function queryUser(user_id) {
+    return new Promise((resolve, reject) => {
+        const sqlUser = `select * from users where id=?`
+        db.query(sqlUser, user_id, (err, userResults) => {
+            if (err) return res.send({
+                status: 1,
+                message: '获取失败'
+            })
+            resolve(userResults)
         })
     })
 }
