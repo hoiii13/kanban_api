@@ -14,4 +14,6 @@ router.post('/list', commentHandler.getTaskComment)
 
 router.post('/content_query', commentHandler.getUserComment)
 
+router.post('/status', commentHandler.readComment)
+
 module.exports = router

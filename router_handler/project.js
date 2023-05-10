@@ -14,7 +14,6 @@ exports.createProject = (req, res) => {
         end_time: req.body.end_time ? req.body.end_time : 0,
         creator_id: req.auth.id,
         creator: req.auth.username,
-        status: 0,
     }
 
     const sqlCreate = `insert into projects set ?`
@@ -48,36 +47,33 @@ exports.editProject = (req, res) => {
     if(!req.body?.project_name) {
         return res.cc('项目名是必填项!')
     }
-    const projectInfo = {
-        project_id:req.body.project_id,
-        project_name: req.body.project_name,
-        project_desc: req.body.project_desc ? req.body.project_desc : '',
-        start_time: req.body.start_time ? req.body.start_time : 0,
-        end_time: req.body.end_time ? req.body.end_time : 0,
-        creator_id: req.auth.id,
-        creator: req.auth.username
-    }
+    const projectId = req.body.project_id
+    //使用SQL中的select查询语句，查询以传入的project_id的值的这条数据的信息
     const sqlProject = `select * from projects where project_id=?`
-    db.query(sqlProject, [projectInfo.project_id, 0], (err, results) => {
+    db.query(sqlProject, projectId, (err, results) => {
         if(err)  return res.cc(err)
+        //操作条数不等于1，表示操作失败，设置状态码为1，提示失败
         if(results.length !== 1) return res.cc('该项目不存在!')
-  
+        //根据项目创建者的id和token解析出的用户id进行比较判断
         if(results[0].creator_id != req.auth.id) return res.cc('没有编辑权限')
 
+        //创建一个用于更新数据的Map对象
         const info = {
-            project_name: projectInfo.project_name,
-            project_desc: projectInfo.project_desc,
-            start_time: projectInfo.start_time,
-            end_time: projectInfo.end_time,
+            project_name: req.body.project_name,
+            project_desc: req.body.project_desc ? req.body.project_desc : '',
+            start_time: req.body.start_time ? req.body.start_time : 0,
+            end_time: req.body.end_time ? req.body.end_time : 0,
             creator_id: req.auth.id,
             creator: req.auth.username,
-            status: 0,
         }
+        //使用SQL中的update进行数据更新
         const sql = `update projects set ? where project_id=?`
-        db.query(sql, [info, projectInfo.project_id ], (err, results) => {
+        db.query(sql, [info, projectId ], (err, results) => {
             if(err) return res.cc(err)
+            //操作条数不等于1，表示操作失败，设置状态码为1，提示失败
             if(results.affectedRows !== 1) return res.cc('更新失败')
 
+            //否则操作条数等于1，表示操作成功，设置状态码为0，提示成功
             res.send({
                 status: 0,
                 message: '更新成功'
@@ -186,7 +182,7 @@ exports.getProjects = (req, res) => {
                                 })
                             })
                             let columnList = await getColumnStatusNum(projectResults[0].project_id)
-                            console.log('test', columnList);
+                            //console.log('test', columnList);
                             const projectItem = { ...projectResults[0], members: members, column: columnList }
                             projectList.push(projectItem)
                             if(projectList.length == len) {

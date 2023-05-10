@@ -6,3 +6,9 @@ module.exports = {
     //token有效时间
     expiresIn: '10h'
 }
+module.exports = {
+    //加密和解密token的秘钥
+    jwtSecretKey: 'invite-code',
+    //token有效时间
+    expiresIn: '10h'
+}

@@ -72,7 +72,7 @@ exports.editTask = (req, res) => {
         if(results.length !== 1) return res.cc('该任务不存在')
 
         const sqlOthers = `select * from others where task_id=?`
-        db.query(sqlOthers, req.body.task_id, (err, oldResults) => {
+        db.query(sqlOthers, req.body.task_id, async(err, oldResults) => {
             if(err) return res.cc(err)
            
         //判断others是向表中增加还是减少数据 
@@ -123,6 +123,9 @@ exports.editTask = (req, res) => {
                 }
             })
         }
+
+        const userInfo = await getUserInfo(req.body.actor_id)
+        console.log('unserInfo', userInfo[0]["username"]);
         const taskInfo = {
             task_name: req.body.task_name,
             task_desc: req.body.task_desc,
@@ -131,6 +134,7 @@ exports.editTask = (req, res) => {
             project_id: req.body.project_id,
             column: req.body.column,
             actor_id: req.body.actor_id,
+            actor:userInfo[0]["username"],
             creator: req.auth.username,
             status: 0
         }
@@ -227,8 +231,7 @@ exports.getTasks = (req, res) => {
                     })
                 })
                 let userInfo = await getUserInfo(value.actor_id)
-                
-                const taskItem = {...value, others: othersPeople,  avatar: userInfo["avatar"]}
+                const taskItem = {...value, others: othersPeople,  avatar: userInfo.length == 0 ? '': userInfo[0]["avatar"]}
                 taskList.push(taskItem)
                 if(taskList.length == len) {
                     var list = taskList.sort(sortId)
@@ -250,17 +253,17 @@ exports.getTasks = (req, res) => {
     })
 }
 
-
+//查询用户信息
 function getUserInfo(id) {
 
    return new Promise((resolve, reject) => {
-        const sqlUser = `select avatar from users where id=?`
+        const sqlUser = `select * from users where id=?`
         db.query(sqlUser, id, (err, results) => {
             /* if (err) return res.send({
                 status: 1,
                 message: '查询失败'
             }) */
-            resolve(results[0])
+            resolve(results)
         })
     })
     
@@ -270,11 +273,23 @@ function getUserInfo(id) {
 //任务搜索
 exports.searchTasks = (req, res) => {
     const sql = "select * from tasks where project_id=" +req.body.project_id + " and task_name like '%" + req.body.name + "%' order by task_id desc";
-    db.query(sql, (err, results) => {
+    db.query(sql, async (err, results) => {
         if(err) return res.cc(err)
-        res.send({ 
-            status:0,
-            message: results
-        })
+
+        let count = 0
+        let taskItems = []
+        for(var i = 0; i < results.length; i++) {
+            const user_id = results[i]["actor_id"]
+            const userInfo = await getUserInfo(user_id)
+            const taskItem = {...results[i], avatar: userInfo.length == 0 ? '' : userInfo[0]["avatar"]}
+            taskItems.push(taskItem)
+            count++
+            if(count == results.length) {
+                res.send({ 
+                    status:0,
+                    message: taskItems
+                })
+            }
+        }
     })
 }

@@ -12,7 +12,7 @@ exports.addComment = (req, res) => {
             if(err) return res.cc(err)
             if (results.length !== 1) return res.cc('该任务不存在')
     
-            const info = {...req.body, user_id: req.auth.id, username: req.auth.username}
+            const info = {...req.body, user_id: req.auth.id, username: req.auth.username, is_read: 0}
             const sql = `insert into comments set ?`
             db.query(sql, info, (err, results) => {
                 if(err) return res.cc(err)
@@ -124,13 +124,26 @@ exports.getUserComment = (req, res) => {
                     task_id: aboutMeList[i].task_id,
                     task_name: taskInfo[0].task_name,
                     project_id: taskInfo[0].project_id,
+                    unread: 0,
                     comments: comments
                 })
                 allNum = allNum + 1
             }
             if (allNum == aboutMeList.length) {
+                let all_unRead = 0;
+                for(let m = 0; m < commentsList.length; m++) {
+                    let unread = 0;
+                    for(let n = 0; n < commentsList[m].comments.length; n++) {
+                        if(commentsList[m].comments[n].is_read == 0) {
+                            unread++
+                            all_unRead++
+                        }
+                    }
+                    commentsList[m].unread = unread
+                }
                 res.send({
                     status: 0,
+                    all_unread: all_unRead,
                     message: commentsList
                 })
             }
@@ -138,6 +151,7 @@ exports.getUserComment = (req, res) => {
         if (len == 0) {
             res.send({
                 status: 0,
+                all_unread: 0,
                 message: commentsList
             })
         }
@@ -172,4 +186,34 @@ function queryUser(user_id) {
             resolve(userResults)
         })
     })
+}
+
+//未读消息修改状态
+exports.readComment = async (req, res) => {
+    const unreadList = req.body.ids
+    let ids = '';
+    for(var i = 0; i < unreadList.length; i++) {
+        if(i == unreadList.length -1) {
+            ids = ids + unreadList[i]
+        } else {
+            ids = ids + unreadList[i] + ','
+        }
+    }
+    const sql = 'update comments set is_read=1 where comment_id in (' + ids + ')'
+    db.query(sql, (err, results) => {
+        if(err) return res.cc(err)
+        console.log('results',results);
+        if(results.affectedRows == 0) return res.cc('修改失败')
+       
+        res.send({
+            status: 0,
+            message: 'OK'
+        })
+    })
+    if(unreadList.length == 0) {
+        res.send({
+            status: 1,
+            message: '请输入id'
+        })
+    }
 }
