@@ -101,3 +101,57 @@ function delOthers (task_id, user_id) {
     })
     })
 }
+
+//获得项目成员
+exports.getMembers = (req, res) => {
+    const sqlProject = `select * from projects where project_id=?`
+    db.query(sqlProject, req.body.project_id, (err, resultsProject) => {
+        if(err) return res.cc(err)
+        if(resultsProject.length == 0 ) return res.cc('该项目不存在')
+
+        const sql = `select * from members where project_id=?`
+        db.query(sql, req.body.project_id, async(err, results) => {
+            if(err) return res.cc(err)
+
+            let memberList = [];
+            for(var i = 0; i < results.length; i++) {
+                let userInfo = await getUserInfo(results[i].user_id)
+                memberList.push({
+                    user_id: results[i].user_id,
+                    username: results[i].username,
+                    avatar: userInfo[0]["avatar"]
+                })
+                
+                if(results.length == memberList.length) {
+                    res.send({
+                        status: 0,
+                        message: memberList
+                    })
+                }
+            }
+            if(results.length == 0) {
+                res.send({
+                    status: 0,
+                    message: []
+                })
+            }
+
+        })
+    })
+}
+
+//查询用户信息
+function getUserInfo(id) {
+    return new Promise((resolve, reject) => {
+         const sqlUser = `select * from users where id=?`
+         db.query(sqlUser, id, (err, results) => {
+            if(err) resolve(err)
+             /* if (err) return res.send({
+                 status: 1,
+                 message: '查询失败'
+             }) */
+             resolve(results)
+         })
+     })
+     
+ }

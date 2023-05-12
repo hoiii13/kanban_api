@@ -12,4 +12,6 @@ router.post('/add', expressjoi(add_member_schema),memberHandler.addMembers)
 
 router.post('/delete',expressjoi(del_member_schema), memberHandler.delMember)
 
+router.post('/project_member', memberHandler.getMembers)
+
 module.exports = router

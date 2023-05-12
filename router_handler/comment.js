@@ -32,6 +32,10 @@ exports.addComment = (req, res) => {
 function sortId(a, b) {
     return b.create_time - a.create_time
 }
+//升序排序
+function sortIdUp(a, b) {
+    return a.create_time - b.create_time
+}
 
 //查询任务中的评论列表
 exports.getTaskComment = (req, res) => {
@@ -202,7 +206,6 @@ exports.readComment = async (req, res) => {
     const sql = 'update comments set is_read=1 where comment_id in (' + ids + ')'
     db.query(sql, (err, results) => {
         if(err) return res.cc(err)
-        console.log('results',results);
         if(results.affectedRows == 0) return res.cc('修改失败')
        
         res.send({

@@ -20,4 +20,6 @@ router.post('/list', taskHandler.getTasks)
 
 router.post('/search', taskHandler.searchTasks)
 
+router.post('/my_task', taskHandler.getMyTasks)
+
 module.exports = router

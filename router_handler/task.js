@@ -122,10 +122,19 @@ exports.editTask = (req, res) => {
     
                 }
             })
+        } else if(lenOld == lenNew) {
+            var oldCount = 0
+            var newCount = 0
+            for(var i = 0; i < lenOld; i++) {
+                await delOthers(oldOthersList[i].user_id, oldOthersList[i].task_id)
+                oldCount++
+            }
+            for(var j = 0; j <lenNew; j++) {
+                await insertOther(newOthersList[j].user_id, req.body.task_id, newOthersList[j].username)
+            }
         }
 
         const userInfo = await getUserInfo(req.body.actor_id)
-        console.log('unserInfo', userInfo[0]["username"]);
         const taskInfo = {
             task_name: req.body.task_name,
             task_desc: req.body.task_desc,
@@ -153,21 +162,59 @@ exports.editTask = (req, res) => {
     })
 }
 
+function delOthers (user_id, task_id) {
+    return new Promise((resolve, reject) => {
+        const sqlRemove = `delete from others where task_id=? and user_id=?`
+        db.query(sqlRemove, [task_id, user_id], (err, removeResults) => {
+            if(err) resolve('error')
+            if(removeResults.affectedRows !== 1) resolve('error')
+            resolve('ok')
+        })
+    })
+}
+
+function insertOther (user_id, task_id, username) {
+    return new Promise((resolve, reject) => {
+        const sqlAdd = `insert into others set ?`
+        const info = {
+            "task_id": task_id,
+            "user_id": user_id,
+            "username": username
+        }
+        db.query(sqlAdd, info, (err, addResults) => {
+            if(err) resolve('error')
+            if(addResults.affectedRows !== 1) resolve('error')
+            resolve('ok')
+        })
+    })
+}
+
 //任务详情
 exports.getTaskInfo = (req, res) => {
     const id = req.body.task_id
     const sqlTask = `select * from tasks where task_id=?`
-    db.query(sqlTask, id, (err, taskResults) => {
+    db.query(sqlTask, id, async (err, taskResults) => {
         if (err) return res.cc(err)
         if (taskResults.length !== 1) return res.cc('该任务不存在')
 
+        const user_id = taskResults[0]["actor_id"]
+        const userInfo = await getUserInfo(user_id)
         const info = taskResults[0]
         const sqlOthers = `select * from others where task_id=?`
-        db.query(sqlOthers, id, (err, results) => {
+        db.query(sqlOthers, id, async (err, results) => {
             if (err) return res.cc(err)
            
             const othersList = results
-            const taskInfo = { ...info, others: othersList}
+            const otherItems = []
+            for(var i = 0 ; i < othersList.length; i++) {
+                const userInfo = await getUserInfo(othersList[i]["user_id"])
+                otherItems.push({
+                    user_id: userInfo.length == 0 ? null : userInfo[0]["id"],
+                    username: userInfo.length == 0 ? null : userInfo[0]["username"],
+                    avatar: userInfo.length == 0 ? null : userInfo[0]["avatar"],
+                })
+            }
+            const taskInfo = { ...info, others: otherItems, avatar: userInfo.length == 0 ? '': userInfo[0]["avatar"]}
             res.send({
                 status: 0,
                 message: taskInfo
@@ -224,11 +271,13 @@ exports.getTasks = (req, res) => {
             db.query(sqlOthers, value.task_id, async (err, results) => {
                 if(err) return res.cc(err)
                 const othersPeople = []
-                results.forEach((e) => {
+                results.forEach(async (e) => {
+                    const userInfo = await getUserInfo(e.user_id)
                     othersPeople.push({
-                        user_id: e.user_id,
-                        username: e.username
-                    })
+                    user_id: userInfo.length == 0 ? null : userInfo[0]["id"],
+                    username: userInfo.length == 0 ? null : userInfo[0]["username"],
+                    avatar: userInfo.length == 0 ? null : userInfo[0]["avatar"],
+                })
                 })
                 let userInfo = await getUserInfo(value.actor_id)
                 const taskItem = {...value, others: othersPeople,  avatar: userInfo.length == 0 ? '': userInfo[0]["avatar"]}
@@ -281,7 +330,16 @@ exports.searchTasks = (req, res) => {
         for(var i = 0; i < results.length; i++) {
             const user_id = results[i]["actor_id"]
             const userInfo = await getUserInfo(user_id)
-            const taskItem = {...results[i], avatar: userInfo.length == 0 ? '' : userInfo[0]["avatar"]}
+            let others = [];
+            const othersList = await getOthers(results[i].task_id)
+            othersList.forEach((value) => {
+                others.push({
+                    user_id: value.user_id,
+                    username: value.username
+                })
+            })
+            
+            const taskItem = {...results[i], avatar: userInfo.length == 0 ? '' : userInfo[0]["avatar"], others: others}
             taskItems.push(taskItem)
             count++
             if(count == results.length) {
@@ -291,5 +349,55 @@ exports.searchTasks = (req, res) => {
                 })
             }
         }
+    })
+}
+
+//获取用户相关的任务列表
+exports.getMyTasks = (req, res) => {
+    const sql = `select * from tasks where actor_id=?`
+    db.query(sql, req.auth.id, async (err, results) => {
+        if(err) return res.cc(err)
+
+        let taskList = [];
+
+        for(var i = 0; i < results.length; i++) {
+            const user_id = results[i]["actor_id"]
+            const userInfo = await getUserInfo(user_id)
+            let others = [];
+            const othersList = await getOthers(results[i].task_id)
+            othersList.forEach((value) => {
+                others.push({
+                    user_id: value.user_id,
+                    username: value.username
+                })
+            })
+            if(others.length == othersList.length) {
+                let taskItem = {...results[i], others: others,avatar: userInfo.length == 0 ? '' : userInfo[0]["avatar"]}
+                taskList.push(taskItem)
+            }
+            if(taskList.length == results.length) {
+                res.send({
+                    status: 0,
+                    message: taskList
+                })
+            }
+        }
+        if(results.length == 0) {
+            res.send({
+                status: 0,
+                message: []
+            })
+        }
+        
+    })
+}
+
+function getOthers (task_id) {
+    return new Promise((resolve, reject) => {
+        const sql = `select * from others where task_id=?`
+        db.query(sql, task_id, (err, results) => {
+            if(err) resolve('error')
+            else resolve(results)
+        })
     })
 }
