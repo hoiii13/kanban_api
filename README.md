@@ -10,3 +10,9 @@
 - 生成 token 字符串的包：josonwebtoken
 - 解析 token 的中间件：express-jwt
 - 异步：async
+- 加密算法处理: crypto
+- 日期时间：moment
+- base64: base64url
+- 生成唯一标识符：uuid
+- 阿里云OSS： ali-oss  
+- 处理 multipart/form-data 类型的表单数据: multer

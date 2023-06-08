@@ -175,10 +175,12 @@ exports.getProjects = (req, res) => {
                         } else {
                             
                             const members = []
-                            membersResults.forEach((e) => {
+                            membersResults.forEach( async (e) => {
+                                const userInfo = await getUserInfo(e.user_id)
                                 members.push({
                                     user_id: e.user_id,
-                                    username: e.username
+                                    username: e.username,
+                                    avatar: userInfo[0].avatar
                                 })
                             })
                             let columnList = await getColumnStatusNum(projectResults[0].project_id)
@@ -210,6 +212,17 @@ exports.getProjects = (req, res) => {
     
 }
 
+//查询用户信息
+function getUserInfo(id) {
+
+    return new Promise((resolve, reject) => {
+         const sqlUser = `select * from users where id=?`
+         db.query(sqlUser, id, (err, results) => {
+             resolve(results)
+         })
+     })
+     
+ }
 
 //项目搜索
 exports.searchProjects = (req, res) => {
